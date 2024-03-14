@@ -1,0 +1,41 @@
+service: sqs-lambda
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: production
+  region: us-east-1
+  deploymentMethod: direct
+
+functions:
+  sqs:
+    handler: index.handler
+    name: ${self:service}-${sls:stage}-sqs
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - ${self:custom.queueName}
+              - Arn
+
+resources:
+  Resources:
+    Queue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:custom.queueName}
+
+useDotenv: true
+
+plugins:
+  - serverless-localstack
+
+custom:
+  queueName: queue
+
+  localstack:
+    debug: true
+    stages: local
+    lambda:
+      mountCode: true

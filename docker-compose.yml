@@ -1,0 +1,15 @@
+version: '3.6'
+
+services:
+  localstack:
+    container_name: localstack-ref-resolution-issue
+    image: localstack/localstack
+    ports:
+      - '127.0.0.1:4566:4566'
+      - '127.0.0.1:4510-4559:4510-4559'
+    environment:
+      - DEBUG=1
+      - SERVICES=lambda,sqs,apigateway,cloudformation,logs,iam
+    volumes:
+      - './.localstack:/var/lib/localstack'
+      - '/var/run/docker.sock:/var/run/docker.sock'
