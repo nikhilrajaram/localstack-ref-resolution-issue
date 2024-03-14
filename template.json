@@ -2,10 +2,79 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "The AWS CloudFormation template for this Serverless application",
   "Resources": {
+    "ServerlessDeploymentBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ServerlessDeploymentBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "ServerlessDeploymentBucket"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":s3:::",
+                      {
+                        "Ref": "ServerlessDeploymentBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":s3:::",
+                      {
+                        "Ref": "ServerlessDeploymentBucket"
+                      }
+                    ]
+                  ]
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
     "SqsLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "/aws/lambda/sqs-lambda-local-sqs"
+        "LogGroupName": "/aws/lambda/sqs-lambda-production-sqs"
       }
     },
     "IamRoleLambdaExecution": {
@@ -34,7 +103,7 @@
                 "-",
                 [
                   "sqs-lambda",
-                  "local",
+                  "production",
                   "lambda"
                 ]
               ]
@@ -51,7 +120,7 @@
                   ],
                   "Resource": [
                     {
-                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/sqs-lambda-local*:*"
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/sqs-lambda-production*:*"
                     }
                   ]
                 },
@@ -62,7 +131,7 @@
                   ],
                   "Resource": [
                     {
-                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/sqs-lambda-local*:*:*"
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/sqs-lambda-production*:*:*"
                     }
                   ]
                 },
@@ -92,7 +161,7 @@
             "-",
             [
               "sqs-lambda",
-              "local",
+              "production",
               {
                 "Ref": "AWS::Region"
               },
@@ -106,12 +175,14 @@
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Code": {
-          "S3Bucket": "hot-reload",
-          "S3Key": "/Users/nikhil/Developer/localstack-ref-resolution-issue"
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/sqs-lambda/production/1710392430331-2024-03-14T05:00:30.331Z/sqs-lambda.zip"
         },
         "Handler": "index.handler",
         "Runtime": "nodejs18.x",
-        "FunctionName": "sqs-lambda-local-sqs",
+        "FunctionName": "sqs-lambda-production-sqs",
         "MemorySize": 1024,
         "Timeout": 6,
         "Role": {
@@ -125,14 +196,14 @@
         "SqsLogGroup"
       ]
     },
-    "SqsLambdaVersionFQg6QRWgIKQfzSle2UQzek4qwwFN5jamMc4b6popLo": {
+    "SqsLambdaVersiondwbysdeCnniGTNJ6NFtm5AE8NuT6TcN2fldZwnJuqI": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "SqsLambdaFunction"
         },
-        "CodeSha256": "5aHZDKg1c8dPKYhGinY+4V7nPnlCBbxLOA3IkiB5qLc="
+        "CodeSha256": "AfQ/r9uex85Q0WtrPFRV7fJ9Sw7DugV0X3MEzDdzeE0="
       }
     },
     "SqsEventSourceMappingSQSQueue": {
@@ -165,13 +236,21 @@
     }
   },
   "Outputs": {
+    "ServerlessDeploymentBucketName": {
+      "Value": {
+        "Ref": "ServerlessDeploymentBucket"
+      },
+      "Export": {
+        "Name": "sls-sqs-lambda-production-ServerlessDeploymentBucketName"
+      }
+    },
     "SqsLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "SqsLambdaVersionFQg6QRWgIKQfzSle2UQzek4qwwFN5jamMc4b6popLo"
+        "Ref": "SqsLambdaVersiondwbysdeCnniGTNJ6NFtm5AE8NuT6TcN2fldZwnJuqI"
       },
       "Export": {
-        "Name": "sls-sqs-lambda-local-SqsLambdaFunctionQualifiedArn"
+        "Name": "sls-sqs-lambda-production-SqsLambdaFunctionQualifiedArn"
       }
     }
   }
